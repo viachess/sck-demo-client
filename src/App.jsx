@@ -3,14 +3,6 @@ import { useEffect, useState, useRef } from "react";
 import "./App.css";
 import PlotlyScatter from "./components/PlotlyScatter";
 
-// case 1 - request data by chunks and append them to current data,
-// chunk size: 10,000 ; 20,000; 30,000; 40,000;
-// [] { mode: chunks, size: 10k, 20k, 30k, 40k }
-// case 2 - request 1 million points initially, then request small samples
-// [] {mode: large_set, post_request_size: 1, 5, 10, 15}
-// case 3 - ws as data channel. get 500 or 5000 points every 2 seconds
-// { mode: live, size: 500 || 5000 }
-
 const SOCKET_PROTOCOL = window.location.protocol === "http:" ? "ws" : "wss";
 const env = "PRODUCTION";
 const domain =
@@ -47,7 +39,6 @@ function App() {
 
   const [xAxisData, setXAxisData] = useState([]);
   const [yAxisData, setYAxisData] = useState([]);
-  // function toggleRequestMode() {}
 
   useEffect(() => {
     function sendMessage(ref, obj) {
@@ -59,6 +50,7 @@ function App() {
       sendMessage(socketRef.current, {
         modeName,
         chunkSize,
+        iniitialChunkSize: mode.initialChunk,
       });
       clearInterval(intervalId);
       intervalId = setInterval(sendIntervalRequest, 2000);
@@ -69,8 +61,6 @@ function App() {
         setInterval(sendIntervalRequest, 2000);
       });
       socketRef.current.addEventListener("message", (event) => {
-        // console.log("INCOMING DATA");
-
         const data = JSON.parse(event.data).data;
 
         const xPoints = data.map((point) => point.x);
