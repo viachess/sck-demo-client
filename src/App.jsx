@@ -12,7 +12,10 @@ import PlotlyScatter from "./components/PlotlyScatter";
 // { mode: live, size: 500 || 5000 }
 
 const SOCKET_PROTOCOL = window.location.protocol === "http:" ? "ws" : "wss";
-const API_URL = `${SOCKET_PROTOCOL}://localhost:4422`;
+const env = "PRODUCTION";
+const domain =
+  env === "DEVELOPMENT" ? "localhost:4422" : "socket-chart-demo.herokuapp.com";
+const API_URL = `${SOCKET_PROTOCOL}://${domain}`;
 
 const MEDIUM_PERIODIC_CHUNKS = "MEDIUM_PERIODIC_CHUNKS";
 const LARGE_INITIAL_CHUNK = "LARGE_INITIAL_CHUNK";
