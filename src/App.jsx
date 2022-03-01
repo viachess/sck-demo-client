@@ -4,7 +4,7 @@ import "./App.css";
 import PlotlyScatter from "./components/PlotlyScatter";
 
 const SOCKET_PROTOCOL = window.location.protocol === "http:" ? "ws" : "wss";
-const env = "PRODUCTION";
+const env = "DEVELOPMENT";
 const domain =
   env === "DEVELOPMENT" ? "localhost:4422" : "socket-chart-demo.herokuapp.com";
 const API_URL = `${SOCKET_PROTOCOL}://${domain}`;
@@ -15,71 +15,91 @@ const SMALL_PERIODIC_CHUNKS = "SMALL_PERIODIC_CHUNKS";
 
 const modes = [
   {
-    name: MEDIUM_PERIODIC_CHUNKS,
-    initial: 10000,
-    chunkSizes: [10000, 20000, 30000, 40000, 50000],
+    name: SMALL_PERIODIC_CHUNKS,
+    initialChunkSize: 500,
+    chunkSizes: [500, 1000, 2500, 5000],
   },
   {
     name: LARGE_INITIAL_CHUNK,
-    initialChunk: 1000000,
+    initialChunkSize: 1000000,
     chunkSizes: [1, 5, 10, 15],
   },
   {
-    name: SMALL_PERIODIC_CHUNKS,
-    initialChunk: 500,
-    chunkSizes: [500, 1000, 2500, 5000],
+    name: MEDIUM_PERIODIC_CHUNKS,
+    initialChunkSize: 10000,
+    chunkSizes: [10000, 20000, 30000, 40000, 50000],
   },
 ];
 
 function App() {
-  const [modeName, setModeName] = useState(modes[2].name);
-  const [mode, setMode] = useState(modes[2]);
-  const [chunkSize, setChunkSize] = useState(modes[2].chunkSizes[0]);
+  const [mode, setMode] = useState(modes[0]);
+  const [chunkSize, setChunkSize] = useState(0);
+  const chunkSizeRef = useRef(null);
   const socketRef = useRef(null);
-
+  // const intervalIdRef = useRef(null);
   const [xAxisData, setXAxisData] = useState([]);
   const [yAxisData, setYAxisData] = useState([]);
 
   useEffect(() => {
+    if (!Boolean(chunkSize)) {
+      const selectedChunkSizeOption = Number(
+        chunkSizeRef.current.options[chunkSizeRef.current.selectedIndex].value
+      );
+      setChunkSize(selectedChunkSizeOption);
+      return;
+    }
+    // if (socketRef.current) {
+    //   socketRef.current.close();
+    // }
+
     function sendMessage(ref, obj) {
+      // console.log("sent message: ");
+      // console.log(JSON.stringify(obj));
       ref.send(JSON.stringify(obj));
     }
 
     let intervalId;
     function sendIntervalRequest() {
-      sendMessage(socketRef.current, {
-        modeName,
-        chunkSize,
-        iniitialChunkSize: mode.initialChunk,
-      });
       clearInterval(intervalId);
       intervalId = setInterval(sendIntervalRequest, 2000);
+      if (!!chunkSize) {
+        sendMessage(socketRef.current, {
+          name: mode.name,
+          chunkSize: chunkSize,
+          initialChunkSize: mode.initialChunkSize,
+        });
+      }
     }
+
     function setupSocket() {
       socketRef.current = new WebSocket(API_URL);
       socketRef.current.addEventListener("open", (event) => {
-        setInterval(sendIntervalRequest, 2000);
+        intervalId = setInterval(sendIntervalRequest, 2000);
       });
       socketRef.current.addEventListener("message", (event) => {
         const data = JSON.parse(event.data).data;
-
-        const xPoints = data.map((point) => point.x);
-        const yPoints = data.map((point) => point.y);
-        setXAxisData((prevState) => {
-          return [...prevState, ...xPoints];
-        });
-        setYAxisData((prevState) => {
-          return [...prevState, ...yPoints];
-        });
+        console.log("received array length");
+        console.log(data.length);
+        if (data.length > 0) {
+          const xPoints = data.map((point) => point[0]);
+          const yPoints = data.map((point) => point[1]);
+          setXAxisData((prevState) => {
+            return [...prevState, ...xPoints];
+          });
+          setYAxisData((prevState) => {
+            return [...prevState, ...yPoints];
+          });
+        }
+      });
+      socketRef.current.addEventListener("close", (event) => {
+        clearInterval(intervalId);
       });
     }
     setupSocket();
-
     return () => {
       socketRef.current.close();
-      clearInterval(intervalId);
     };
-  }, [modeName, chunkSize]);
+  }, [mode, chunkSize]);
 
   return (
     <div className="App">
@@ -87,7 +107,7 @@ function App() {
 
       <div>
         <p>
-          Current data fetch mode: <b>{modeName}</b>
+          Current data fetch mode: <b>{mode.name}</b>
         </p>
         <p>
           Requested chunk size: <b>{chunkSize}</b> points
@@ -100,11 +120,11 @@ function App() {
           id="modes-select"
           className="selectEl"
           onChange={(e) => {
-            setModeName(e.target.value);
             const newMode = modes.filter(
               (mode) => mode.name === e.target.value
             )[0];
             setMode(newMode);
+            setChunkSize(newMode.chunkSizes[0]);
             setYAxisData([]);
             setXAxisData([]);
           }}
@@ -124,7 +144,11 @@ function App() {
           name="chunkSize-select"
           id="chunkSize-select"
           className="selectEl"
-          onChange={(e) => setChunkSize(Number(e.target.value))}
+          ref={chunkSizeRef}
+          onChange={(e) => {
+            const newValue = Number(e.target.value);
+            setChunkSize(newValue);
+          }}
         >
           {mode.chunkSizes.map((size) => {
             return (
