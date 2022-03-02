@@ -4,7 +4,7 @@ import "./App.css";
 import PlotlyScatter from "./components/PlotlyScatter";
 
 const SOCKET_PROTOCOL = window.location.protocol === "http:" ? "ws" : "wss";
-const env = "PRODUCTION";
+const env = "DEVELOPMENT";
 const domain =
   env === "DEVELOPMENT" ? "localhost:4422" : "socket-chart-demo.herokuapp.com";
 const API_URL = `${SOCKET_PROTOCOL}://${domain}`;
@@ -81,8 +81,8 @@ function App() {
         console.log("received array length");
         console.log(data.length);
         if (data.length > 0) {
-          const xPoints = data.map((point) => point[0]);
-          const yPoints = data.map((point) => point[1]);
+          const xPoints = data.map((point) => point.x);
+          const yPoints = data.map((point) => point.y);
           setXAxisData((prevState) => {
             return [...prevState, ...xPoints];
           });
