@@ -48,9 +48,10 @@ function App() {
       setChunkSize(selectedChunkSizeOption);
       return;
     }
-    // if (socketRef.current) {
-    //   socketRef.current.close();
-    // }
+    if (socketRef.current) {
+      socketRef.current.close();
+      return;
+    }
 
     function sendMessage(ref, obj) {
       // console.log("sent message: ");
