@@ -50,7 +50,6 @@ function App() {
     }
     if (socketRef.current) {
       socketRef.current.close();
-      return;
     }
 
     function sendMessage(ref, obj) {
