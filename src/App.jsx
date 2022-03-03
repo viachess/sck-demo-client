@@ -3,10 +3,13 @@ import { useEffect, useState, useRef } from "react";
 import "./App.css";
 import PlotlyScatter from "./components/PlotlyScatter";
 
+const dev = "DEVELOPMENT";
+// const prod = "PRODUCTION";
+
 const SOCKET_PROTOCOL = window.location.protocol === "http:" ? "ws" : "wss";
-const env = "PRODUCTION";
+const env = dev;
 const domain =
-  env === "DEVELOPMENT" ? "localhost:4422" : "socket-chart-demo.herokuapp.com";
+  env === dev ? "localhost:4422" : "socket-chart-demo.herokuapp.com";
 const API_URL = `${SOCKET_PROTOCOL}://${domain}/chart-socket`;
 
 const MEDIUM_PERIODIC_CHUNKS = "MEDIUM_PERIODIC_CHUNKS";
