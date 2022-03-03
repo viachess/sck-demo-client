@@ -2,12 +2,13 @@ import { useEffect, useState, useRef } from "react";
 
 import "./App.css";
 import PlotlyScatter from "./components/PlotlyScatter";
+import { nanoid } from "nanoid";
 
 const dev = "DEVELOPMENT";
-// const prod = "PRODUCTION";
+const prod = "PRODUCTION";
 
 const SOCKET_PROTOCOL = window.location.protocol === "http:" ? "ws" : "wss";
-const env = dev;
+const env = prod;
 const domain =
   env === dev ? "localhost:4422" : "socket-chart-demo.herokuapp.com";
 const API_URL = `${SOCKET_PROTOCOL}://${domain}/chart-socket`;
@@ -39,6 +40,7 @@ function App() {
   const [chunkSize, setChunkSize] = useState(0);
   const chunkSizeRef = useRef(null);
   const socketRef = useRef(null);
+  const dataHashRef = useRef(null);
   // const intervalIdRef = useRef(null);
   const [xAxisData, setXAxisData] = useState([]);
   const [yAxisData, setYAxisData] = useState([]);
@@ -66,10 +68,14 @@ function App() {
       clearInterval(intervalId);
       intervalId = setInterval(sendIntervalRequest, 3000);
       if (!!chunkSize) {
+        const hash = nanoid();
+        dataHashRef.current = hash;
+
         sendMessage(socketRef.current, {
           name: mode.name,
           chunkSize: chunkSize,
           initialChunkSize: mode.initialChunkSize,
+          hash,
         });
       }
     }
@@ -82,8 +88,8 @@ function App() {
       });
 
       socketRef.current.addEventListener("message", (event) => {
-        const { data } = JSON.parse(event.data);
-        if (data.length > 0) {
+        const { data, hash } = JSON.parse(event.data);
+        if (data.length > 0 && dataHashRef.current === hash) {
           const xPoints = data.map((point) => point.x);
           const yPoints = data.map((point) => point.y);
           setXAxisData((prevState) => {
