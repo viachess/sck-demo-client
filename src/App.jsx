@@ -7,7 +7,7 @@ const SOCKET_PROTOCOL = window.location.protocol === "http:" ? "ws" : "wss";
 const env = "PRODUCTION";
 const domain =
   env === "DEVELOPMENT" ? "localhost:4422" : "socket-chart-demo.herokuapp.com";
-const API_URL = `${SOCKET_PROTOCOL}://${domain}`;
+const API_URL = `${SOCKET_PROTOCOL}://${domain}/chart-socket`;
 
 const MEDIUM_PERIODIC_CHUNKS = "MEDIUM_PERIODIC_CHUNKS";
 const LARGE_INITIAL_CHUNK = "LARGE_INITIAL_CHUNK";
@@ -61,7 +61,7 @@ function App() {
     let intervalId;
     function sendIntervalRequest() {
       clearInterval(intervalId);
-      intervalId = setInterval(sendIntervalRequest, 2000);
+      intervalId = setInterval(sendIntervalRequest, 3000);
       if (!!chunkSize) {
         sendMessage(socketRef.current, {
           name: mode.name,
@@ -73,13 +73,13 @@ function App() {
 
     function setupSocket() {
       socketRef.current = new WebSocket(API_URL);
+
       socketRef.current.addEventListener("open", (event) => {
-        intervalId = setInterval(sendIntervalRequest, 2000);
+        intervalId = setInterval(sendIntervalRequest, 3000);
       });
+
       socketRef.current.addEventListener("message", (event) => {
-        const data = JSON.parse(event.data).data;
-        console.log("received array length");
-        console.log(data.length);
+        const { data } = JSON.parse(event.data);
         if (data.length > 0) {
           const xPoints = data.map((point) => point.x);
           const yPoints = data.map((point) => point.y);
